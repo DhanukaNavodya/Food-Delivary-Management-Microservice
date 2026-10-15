@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 env:
-  AWS_ACCOUNT_ID: "886312446090"
+  AWS_ACCOUNT_ID: "806079021593"
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECS_CLUSTER: food-delivery-cluster
   ECS_SERVICE: food-delivery-service
@@ -50,7 +50,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::886312446090:role/github-actions-ecs-deployer
+          role-to-assume: arn:aws:iam::806079021593:role/github-actions-ecs-deployer
           role-session-name: GitHubActionsDeployment
           aws-region: ${{ env.AWS_REGION }}
 
