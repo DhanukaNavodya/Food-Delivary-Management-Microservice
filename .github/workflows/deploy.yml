@@ -1,0 +1,70 @@
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push api-gateway
+        run: |
+          docker build -t food-delivery/api-gateway ./api-gateway
+          docker tag food-delivery/api-gateway:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/api-gateway:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/api-gateway:latest
+
+      - name: Build and push auth-service
+        run: |
+          docker build -t food-delivery/auth-service ./services/auth-service
+          docker tag food-delivery/auth-service:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/auth-service:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/auth-service:latest
+
+      - name: Build and push restaurant-service
+        run: |
+          docker build -t food-delivery/restaurant-service ./services/restaurant-service
+          docker tag food-delivery/restaurant-service:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/restaurant-service:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/restaurant-service:latest
+
+      - name: Build and push order-service
+        run: |
+          docker build -t food-delivery/order-service ./services/order-service
+          docker tag food-delivery/order-service:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/order-service:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/order-service:latest
+
+      - name: Build and push delivery-service
+        run: |
+          docker build -t food-delivery/delivery-service ./services/delivery-service
+          docker tag food-delivery/delivery-service:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/delivery-service:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/delivery-service:latest
+
+      - name: Build and push customer-service
+        run: |
+          docker build -t food-delivery/customer-service ./services/customer-service
+          docker tag food-delivery/customer-service:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/customer-service:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/food-delivery/customer-service:latest
+
+      - name: Force ECS deployment
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --service ${{ secrets.ECS_SERVICE }} \
+            --force-new-deployment

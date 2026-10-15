@@ -1,0 +1,82 @@
+services:
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: auth-service
+    ports:
+      - "5001:5001"
+    env_file:
+      - ./services/auth-service/.env
+    networks:
+      - food-delivery-network
+
+  restaurant-service:
+    build:
+      context: ./services/restaurant-service
+    container_name: restaurant-service
+    ports:
+      - "5002:5002"
+    env_file:
+      - ./services/restaurant-service/.env
+    networks:
+      - food-delivery-network
+
+  order-service:
+    build:
+      context: ./services/order-service
+    container_name: order-service
+    ports:
+      - "5003:5003"
+    env_file:
+      - ./services/order-service/.env
+    networks:
+      - food-delivery-network
+    depends_on:
+      - restaurant-service
+      - customer-service
+
+  delivery-service:
+    build:
+      context: ./services/delivery-service
+    container_name: delivery-service
+    ports:
+      - "5004:5004"
+    env_file:
+      - ./services/delivery-service/.env
+    networks:
+      - food-delivery-network
+    depends_on:
+      - order-service
+      - restaurant-service
+
+  customer-service:
+    build:
+      context: ./services/customer-service
+    container_name: customer-service
+    ports:
+      - "5005:5005"
+    env_file:
+      - ./services/customer-service/.env
+    networks:
+      - food-delivery-network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./api-gateway/nginx.local.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - restaurant-service
+      - order-service
+      - delivery-service
+      - customer-service
+    networks:
+      - food-delivery-network
+
+networks:
+  food-delivery-network:
+    driver: bridge
